@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>心情便签墙</title>
+    <style>
+        :root {
+            --bg-color: #f6f4ef;
+            --grid-color: rgba(0, 0, 0, 0.04);
+            --tape-color: rgba(255, 255, 255, 0.45);
+            --text-color: #3e3a39;
+            --card-shadow: 2px 6px 16px rgba(80, 60, 50, 0.10);
+            --card-shadow-drag: 8px 20px 40px rgba(60, 40, 30, 0.25);
+            --note-yellow: #fff2a8;
+            --note-pink: #ffd6e0;
+            --note-mint: #c6f6d5;
+            --note-blue: #bfdbfe;
+            --note-purple: #e2d1f9;
+            --note-orange: #ffe0c2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(0deg, var(--grid-color) 1px, transparent 0),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 0);
+            background-size: 40px 40px;
+            color: var(--text-color);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 210, 160, 0.12), transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(160, 210, 255, 0.10), transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* --- Card Styles --- */
+        .card {
+            position: absolute;
+            width: 220px;
+            min-height: 140px;
+            background: #fff;
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            transform: rotate(var(--angle, 0deg)) scale(0.8);
+            transform-origin: center top;
+            transition:
+                transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease,
+                box-shadow 0.3s ease;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            cursor: grab;
+            border-bottom-right-radius: 40px 5px;
+            will-change: transform, left, top;
+        }
+
+        .card.appear {
+            opacity: 1;
+            transform: rotate(var(--angle, 0deg)) scale(1);
+        }
+
+        @media (hover: hover) {
+            .card:hover {
+                transform: translateY(-4px) rotate(var(--angle, 0deg)) scale(1.03);
+                box-shadow: 0 12px 28px rgba(60, 40, 30, 0.18);
+            }
+        }
+
+        .card.removing {
+            opacity: 0;
+            transform: rotate(5deg) scale(0.5);
+            box-shadow: 0 0 0 rgba(60, 40, 30, 0);
+            transition: transform 0.25s ease-in, opacity 0.25s ease-in, box-shadow 0.25s ease-in;
+            pointer-events: none;
+        }
+
+        /* 拟物化胶带效果 */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            width: 90px;
+            height: 25px;
+            background-color: var(--tape-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            backdrop-filter: blur(2px);
+            z-index: 1;
+            opacity: 0.8;
+        }
+
+        .card.dragging {
+            transition: none;
+            transform: rotate(var(--angle, 0deg)) scale(1.04);
+            box-shadow: var(--card-shadow-drag);
+            cursor: grabbing;
+            z-index: 9999 !important;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px 5px;
+        }
+
+        .card-time {
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.4);
+            font-weight: 500;
+        }
+
+        .card-close {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s, background 0.2s;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .card-close:hover {
+            opacity: 1;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .card-body {
+            padding: 10px 18px 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            font-weight: 600;
+            color: var(--text-color);
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            word-wrap: break-word;
+        }
+
+        /* --- Toolbar Styles --- */
+        .toolbar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 12px 25px;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 10000;
+            transition: transform 0.3s ease;
+            animation: toolbarIn 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+        }
+        
+        @media (max-height: 500px) {
+            .toolbar { display: none; }
+        }
+
+        .btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: #555;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            color: #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn.active {
+            background: #333;
+            color: #fff;
+        }
+
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(3px);
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #fff;
+            padding: 25px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            transform: translateY(20px) scale(0.92);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .modal-overlay.open .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .modal textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            resize: none;
+            font-size: 16px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        
+        .modal textarea:focus {
+            border-color: #aaa;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-btn.cancel { background: #f0f0f0; color: #666; }
+        .modal-btn.confirm { background: #333; color: #fff; }
+
+        @media (max-width: 768px) {
+            .card { width: 160px; min-height: 120px; }
+            .card-body { padding: 10px 14px 14px; font-size: 14px; }
+            .toolbar { padding: 10px 20px; bottom: 20px; }
+            .btn { width: 40px; height: 40px; font-size: 18px; }
+        }
+
+        /* --- Empty State --- */
+        .empty-state {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: rgba(62, 58, 57, 0.35);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 10;
+        }
+
+        .empty-state.visible {
+            opacity: 1;
+        }
+
+        .empty-icon {
+            display: block;
+            font-size: 48px;
+            margin-bottom: 12px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        /* --- Animations --- */
+        @keyframes toolbarIn {
+            0% { opacity: 0; transform: translate(-50%, 20px); }
+            100% { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5) rotate(var(--angle, 0deg)); }
+            70% { opacity: 1; transform: scale(1.06) rotate(var(--angle, 0deg)); }
+            100% { opacity: 1; transform: scale(1) rotate(var(--angle, 0deg)); }
+        }
+
+        .card.pop-in {
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-delay: 0ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="board"></div>
+    <div class="empty-state" id="emptyState">
+        <span class="empty-icon">✎</span>
+        <p>墙上空空如也，写一张吧</p>
+    </div>
+
+    <!-- 底部工具栏 -->
+    <div class="toolbar">
+        <button class="btn" id="btnAdd" title="写便签">✎</button>
+        <button class="btn" id="btnClear" title="清空所有">🗑</button>
+    </div>
+
+    <!-- 输入弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h3>写下你的想法...</h3>
+            <textarea id="noteInput" placeholder="今天想说点什么？（30字以内）" maxlength="30"></textarea>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="btnCancel">取消</button>
+                <button class="modal-btn confirm" id="btnConfirm">贴上去</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 配置与状态 ---
+        const STORAGE_KEY = 'sticker_wall_notes_v2';
+        const board = document.getElementById('board');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const noteInput = document.getElementById('noteInput');
+        const emptyState = document.getElementById('emptyState');
+
+        const config = {
+            colors: ['#fff2a8', '#ffd6e0', '#c6f6d5', '#bfdbfe', '#e2d1f9', '#ffe0c2'],
+            presetMessages: [
+                '保持好心情', '多喝水哦', '今天辛苦啦', '早点休息', '记得吃水果',
+                '加油，你可以的', '祝你顺利', '保持微笑呀', '愿烦恼消失',
+                '梦想总会实现', '别忘了深呼吸', '你很棒！', '享受当下',
+                '去见想见的人', '听首好听的歌', '抬头看看天空', '一切都会变好',
+                '慢慢来，比较快', '今天也要开心', '给生活一点甜', '你已经很努力了',
+                '放轻松，没关系', '温柔地对待自己', '好事会发生', '做自己喜欢的事',
+                '世界很大，去看看', '感谢自己', '未来可期', '此刻即是礼物'
+            ],
+            desktopCount: [24, 30],
+            mobileCount: [12, 15]
+        };
+
+        const state = {
+            zIndex: 100,
+            cardMap: new WeakMap()
+        };
+
+        let isMobile = window.innerWidth <= 768;
+
+        // --- 工具函数 ---
+        function randomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function randomBetween(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function createId() {
+            return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+        }
+
+        function getInitialCount() {
+            const [min, max] = isMobile ? config.mobileCount : config.desktopCount;
+            return randomBetween(min, max);
+        }
+
+        function loadNotes() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                return Array.isArray(data) ? data : null;
+            } catch (e) {
+                console.error('Failed to load notes', e);
+                return null;
+            }
+        }
+
+        function saveNotes(notes) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+            } catch (e) {
+                console.error('Failed to save notes', e);
+            }
+        }
+
+        function updateEmptyState() {
+            const hasCards = board.querySelectorAll('.card').length > 0;
+            emptyState.classList.toggle('visible', !hasCards);
+        }
+
+        // --- 初始化 ---
+        function init() {
+            const saved = loadNotes();
+
+            if (saved) {
+                saved.forEach((note, index) => {
+                    createCard({
+                        ...note,
+                        animateDelay: Math.min(index * 35, 1200)
+                    });
+                });
+            } else {
+                const count = getInitialCount();
+                const notes = [];
+                for (let i = 0; i < count; i++) {
+                    const note = createPresetNote();
+                    notes.push(note);
+                    createCard({ ...note, animateDelay: Math.min(i * 40, 1200) });
+                }
+                saveNotes(notes);
+            }
+
+            updateEmptyState();
+            setupControls();
+
+            window.addEventListener('resize', () => {
+                isMobile = window.innerWidth <= 768;
+            });
+        }
+
+        function createPresetNote() {
+            const text = randomItem(config.presetMessages);
+            const color = randomItem(config.colors);
+            const angle = (Math.random() - 0.5) * 12;
+            const cardW = isMobile ? 160 : 220;
+            const cardH = isMobile ? 120 : 140;
+            const maxLeft = Math.max(10, window.innerWidth - cardW - 20);
+            const maxTop = Math.max(10, window.innerHeight - cardH - 90);
+
+            return {
+                id: createId(),
+                text,
+                x: Math.random() * maxLeft + 10,
+                y: Math.random() * maxTop + 10,
+                color,
+                angle,
+                createdAt: Date.now()
+            };
+        }
+
+        // --- 创建卡片 ---
+        function createCard(options = {}) {
+            const { id, text, x, y, color, angle, createdAt, animateDelay = 0 } = options;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.id = id ?? '';
+            card.dataset.color = color || '';
+            card.style.setProperty('--angle', `${angle ?? 0}deg`);
+            card.style.background = color || randomItem(config.colors);
+            card.style.left = `${x ?? 10}px`;
+            card.style.top = `${y ?? 10}px`;
+            card.style.zIndex = ++state.zIndex;
+            if (animateDelay) card.style.animationDelay = `${animateDelay}ms`;
+
+            const time = createdAt ? new Date(createdAt) : new Date();
+            const timeStr = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="card-time">${timeStr}</span>
+                    <span class="card-close" title="删除">×</span>
+                </div>
+                <div class="card-body"></div>
+            `;
+            card.querySelector('.card-body').textContent = text ?? '';
+
+            board.appendChild(card);
+
+            state.cardMap.set(card, {
+                id,
+                angle: angle ?? 0,
+                color: color || '',
+                createdAt: createdAt || Date.now(),
+                currentX: x ?? 10,
+                currentY: y ?? 10,
+                isDragging: false
+            });
+
+            setupInteractions(card);
+
+            requestAnimationFrame(() => {
+                card.classList.add('appear', 'pop-in');
+            });
+
+            return card;
+        }
+
+        // --- 交互逻辑 ---
+        function setupInteractions(card) {
+            const closeBtn = card.querySelector('.card-close');
+
+            card.addEventListener('pointerdown', () => {
+                card.style.zIndex = ++state.zIndex;
+            });
+
+            card.addEventListener('pointerdown', startDrag);
+
+            closeBtn.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                removeCard(card);
+            });
+
+            card.addEventListener('dblclick', () => removeCard(card));
+        }
+
+        function removeCard(card) {
+            if (card.classList.contains('removing')) return;
+            card.classList.remove('pop-in');
+            card.style.transition = '';
+            card.classList.add('removing');
+            setTimeout(() => {
+                card.remove();
+                updateEmptyState();
+                saveAllNotes();
+            }, 260);
+        }
+
+        // --- 拖拽核心 ---
+        function startDrag(e) {
+            const card = e.currentTarget;
+            if (e.target.classList.contains('card-close')) return;
+
+            const cardState = state.cardMap.get(card);
+            if (!cardState) return;
+
+            e.preventDefault();
+            card.classList.remove('pop-in');
+            card.classList.add('dragging');
+            card.style.transition = '';
+            cardState.isDragging = true;
+
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const initialLeft = parseFloat(card.style.left);
+            const initialTop = parseFloat(card.style.top);
+
+            function onMove(e) {
+                if (!cardState.isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                cardState.currentX = initialLeft + dx;
+                cardState.currentY = initialTop + dy;
+
+                card.style.left = `${cardState.currentX}px`;
+                card.style.top = `${cardState.currentY}px`;
+            }
+
+            function onUp() {
+                cardState.isDragging = false;
+                card.classList.remove('dragging');
+
+                const rect = card.getBoundingClientRect();
+                const winW = window.innerWidth;
+                const winH = window.innerHeight;
+
+                let finalX = cardState.currentX;
+                let finalY = cardState.currentY;
+
+                if (finalX < 0) finalX = 0;
+                if (finalX > winW - rect.width) finalX = winW - rect.width;
+                if (finalY < 0) finalY = 0;
+                if (finalY > winH - rect.height) finalY = winH - rect.height;
+
+                if (finalX !== cardState.currentX || finalY !== cardState.currentY) {
+                    card.style.transition = 'left 0.3s ease, top 0.3s ease';
+                    card.style.left = `${finalX}px`;
+                    card.style.top = `${finalY}px`;
+
+                    setTimeout(() => {
+                        card.style.transition = '';
+                    }, 300);
+                }
+
+                cardState.currentX = finalX;
+                cardState.currentY = finalY;
+                saveAllNotes();
+
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+                document.removeEventListener('pointercancel', onUp);
+            }
+
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+            document.addEventListener('pointercancel', onUp);
+        }
+
+        // --- 工具栏控制 ---
+        function setupControls() {
+            document.getElementById('btnAdd').addEventListener('click', () => {
+                modalOverlay.classList.add('open');
+                noteInput.value = '';
+                setTimeout(() => noteInput.focus(), 100);
+            });
+
+            document.getElementById('btnClear').addEventListener('click', () => {
+                if (confirm('确定要撕掉所有便签吗？')) {
+                    board.querySelectorAll('.card').forEach(card => card.remove());
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+                    updateEmptyState();
+                }
+            });
+
+            document.getElementById('btnCancel').addEventListener('click', () => {
+                modalOverlay.classList.remove('open');
+            });
+
+            document.getElementById('btnConfirm').addEventListener('click', () => {
+                const text = noteInput.value.trim();
+                if (text) {
+                    if (text.length > 30) {
+                        alert('便签不能超过 30 字');
+                        return;
+                    }
+                    const note = createPresetNote();
+                    note.text = text;
+                    note.id = createId();
+                    note.createdAt = Date.now();
+
+                    const cardW = isMobile ? 160 : 220;
+                    const cardH = isMobile ? 120 : 140;
+                    const cx = window.innerWidth / 2 - cardW / 2 + (Math.random() * 40 - 20);
+                    const cy = window.innerHeight / 2 - cardH / 2 + (Math.random() * 40 - 20);
+                    note.x = Math.max(10, Math.min(window.innerWidth - cardW - 10, cx));
+                    note.y = Math.max(10, Math.min(window.innerHeight - cardH - 80, cy));
+
+                    createCard({ ...note, animateDelay: 0 });
+                    saveAllNotes();
+                }
+                modalOverlay.classList.remove('open');
+            });
+
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) modalOverlay.classList.remove('open');
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') modalOverlay.classList.remove('open');
+            });
+
+            noteInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('btnConfirm').click();
+                }
+            });
+        }
+
+        // --- 本地存储 ---
+        function saveAllNotes() {
+            const notes = [];
+            board.querySelectorAll('.card').forEach(card => {
+                const cardState = state.cardMap.get(card);
+                notes.push({
+                    id: cardState?.id ?? createId(),
+                    text: card.querySelector('.card-body').textContent,
+                    x: parseFloat(card.style.left),
+                    y: parseFloat(card.style.top),
+                    color: cardState?.color || card.dataset.color || card.style.backgroundColor,
+                    angle: cardState?.angle ?? 0,
+                    createdAt: cardState?.createdAt || Date.now()
+                });
+            });
+            saveNotes(notes);
+        }
+
+        init();
+    </script>
+</body>
+</html>
