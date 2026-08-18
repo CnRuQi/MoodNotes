@@ -10,6 +10,7 @@
             --grid-color: rgba(0, 0, 0, 0.04);
             --tape-color: rgba(255, 255, 255, 0.45);
             --text-color: #3e3a39;
+            --note-text: #3e3a39;
             --card-shadow: 2px 6px 16px rgba(80, 60, 50, 0.10);
             --card-shadow-drag: 8px 20px 40px rgba(60, 40, 30, 0.25);
             --note-yellow: #fff2a8;
@@ -39,6 +40,9 @@
             height: 100dvh;
             overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
         }
 
         body::before {
@@ -102,6 +106,10 @@
             pointer-events: none;
         }
 
+        .card.hidden {
+            display: none;
+        }
+
         /* 拟物化胶带效果 */
         .card::before {
             content: '';
@@ -163,7 +171,7 @@
             font-size: 16px;
             line-height: 1.5;
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--note-text);
             font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
             word-wrap: break-word;
         }
@@ -171,7 +179,7 @@
         /* --- Toolbar Styles --- */
         .toolbar {
             position: fixed;
-            bottom: 30px;
+            bottom: calc(64px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -188,6 +196,7 @@
         
         @media (max-height: 500px) {
             .toolbar { display: none; }
+            .btn-random { display: none; }
         }
 
         .btn {
@@ -220,6 +229,61 @@
         .btn.active {
             background: #333;
             color: #fff;
+        }
+
+        .btn-random {
+            position: fixed;
+            bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            border: none;
+            background: #fff;
+            color: #555;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 18px;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 10000;
+            transition: all 0.2s;
+        }
+
+        .btn-random:hover {
+            color: #000;
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .btn-random:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        /* --- 搜索框 --- */
+        .search-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: none;
+            outline: none;
+            border-radius: 50px;
+            padding: 10px 24px;
+            width: 200px;
+            font-size: 14px;
+            text-align: center;
+            color: var(--text-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s ease, box-shadow 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .search-box:focus {
+            width: 260px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         /* --- Modal Styles --- */
@@ -298,8 +362,34 @@
         @media (max-width: 768px) {
             .card { width: 160px; min-height: 120px; }
             .card-body { padding: 10px 14px 14px; font-size: 14px; }
-            .toolbar { padding: 10px 20px; bottom: 20px; }
+            .toolbar { padding: 10px 20px; bottom: calc(54px + env(safe-area-inset-bottom, 0px)); }
             .btn { width: 40px; height: 40px; font-size: 18px; }
+        }
+
+        /* --- 暗色模式 --- */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #191817;
+                --grid-color: rgba(255, 255, 255, 0.05);
+                --text-color: #e8e4de;
+                --card-shadow: 2px 6px 16px rgba(0, 0, 0, 0.45);
+                --card-shadow-drag: 8px 20px 40px rgba(0, 0, 0, 0.6);
+                --tape-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .toolbar { background: rgba(30, 29, 28, 0.88); }
+            .btn { background: #2b2a28; color: #bdb9b3; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+            .btn:hover { color: #fff; }
+            .btn-random { background: #2b2a28; color: #bdb9b3; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+            .btn-random:hover { color: #fff; }
+            .search-box { background: rgba(30, 29, 28, 0.88); color: var(--text-color); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35); }
+            .search-box::placeholder { color: rgba(255, 255, 255, 0.4); }
+            .modal { background: #262524; }
+            .modal h3 { color: var(--text-color); }
+            .modal textarea { background: #1d1c1b; border-color: #3a3937; color: var(--text-color); }
+            .modal textarea::placeholder { color: rgba(255, 255, 255, 0.35); }
+            .modal-btn.cancel { background: #3a3937; color: #cfcbc5; }
+            .empty-state { color: rgba(255, 255, 255, 0.35); }
         }
 
         /* --- Empty State --- */
@@ -335,9 +425,11 @@
         /* --- Undo Bar --- */
         .undo-bar {
             position: fixed;
-            top: 20px;
+            top: 78px;
             left: 50%;
-            transform: translate(-50%, -70px);
+            transform: translate(-50%, -90px);
+            opacity: 0;
+            pointer-events: none;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -347,11 +439,13 @@
             border-radius: 50px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
             z-index: 15000;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
         }
 
         .undo-bar.show {
             transform: translate(-50%, 0);
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .undo-text {
@@ -421,16 +515,27 @@
 </head>
 <body>
     <div id="board"></div>
+    <input type="search" class="search-box" id="searchBox" placeholder="🔍 搜索便签" autocomplete="off" />
     <div class="empty-state" id="emptyState">
         <span class="empty-icon">✎</span>
         <p>墙上空空如也，写一张吧</p>
+    </div>
+    <div class="empty-state" id="searchEmpty">
+        <span class="empty-icon">🔍</span>
+        <p>没有找到相关便签</p>
     </div>
 
     <!-- 底部工具栏 -->
     <div class="toolbar">
         <button class="btn" id="btnAdd" title="写便签">✎</button>
         <button class="btn" id="btnClear" title="清空所有">🗑</button>
+        <button class="btn" id="btnExport" title="导出备份">📤</button>
+        <button class="btn" id="btnImport" title="导入备份">📥</button>
     </div>
+    <input type="file" id="fileInput" accept=".json,application/json" hidden />
+
+    <!-- 随机便签按钮 -->
+    <button class="btn-random" id="btnRandom" title="随机补充 5 张便签">🎲 随机5张</button>
 
     <!-- 清空撤回提示 -->
     <div class="undo-bar" id="undoBar">
@@ -451,16 +556,33 @@
         </div>
     </div>
 
+    <!-- 确认弹窗 -->
+    <div class="modal-overlay" id="confirmOverlay">
+        <div class="modal">
+            <h3 id="confirmTitle">确定操作？</h3>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="btnConfirmCancel">取消</button>
+                <button class="modal-btn confirm" id="btnConfirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- 配置与状态 ---
         const STORAGE_KEY = 'sticker_wall_notes_v2';
-        const BACKUP_KEY = 'sticker_wall_notes_v2_backup';
         const board = document.getElementById('board');
         const modalOverlay = document.getElementById('modalOverlay');
         const noteInput = document.getElementById('noteInput');
         const emptyState = document.getElementById('emptyState');
+        const searchEmpty = document.getElementById('searchEmpty');
+        const searchBox = document.getElementById('searchBox');
         const undoBar = document.getElementById('undoBar');
         const undoText = document.getElementById('undoText');
+        const confirmOverlay = document.getElementById('confirmOverlay');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmOk = document.getElementById('btnConfirmOk');
+        const confirmCancel = document.getElementById('btnConfirmCancel');
+        const fileInput = document.getElementById('fileInput');
 
         const config = {
             colors: ['#fff2a8', '#ffd6e0', '#c6f6d5', '#bfdbfe', '#e2d1f9', '#ffe0c2'],
@@ -481,6 +603,11 @@
             zIndex: 100,
             cardMap: new WeakMap()
         };
+
+        const undoStack = [];
+        let clearing = false;
+        let confirmResolver = null;
+        let undoBarTimer = null;
 
         let isMobile = window.innerWidth <= 768;
 
@@ -523,8 +650,20 @@
         }
 
         function updateEmptyState() {
-            const hasCards = board.querySelectorAll('.card').length > 0;
-            emptyState.classList.toggle('visible', !hasCards);
+            const total = board.querySelectorAll('.card:not(.removing)').length;
+            const visible = board.querySelectorAll('.card:not(.removing):not(.hidden)').length;
+            const searching = searchBox.value.trim() !== '';
+            emptyState.classList.toggle('visible', total === 0);
+            searchEmpty.classList.toggle('visible', total > 0 && visible === 0 && searching);
+        }
+
+        function applySearch() {
+            const q = searchBox.value.trim().toLowerCase();
+            board.querySelectorAll('.card').forEach(card => {
+                const text = (card.querySelector('.card-body').textContent || '').toLowerCase();
+                card.classList.toggle('hidden', q !== '' && !text.includes(q));
+            });
+            updateEmptyState();
         }
 
         // --- 初始化 ---
@@ -551,11 +690,6 @@
 
             updateEmptyState();
 
-            const backup = loadBackup();
-            if (backup && backup.length > 0 && board.querySelectorAll('.card').length === 0) {
-                showUndoBar(`已清空 ${backup.length} 张便签（可撤销）`);
-            }
-
             setupControls();
 
             window.addEventListener('resize', () => {
@@ -563,22 +697,51 @@
             });
         }
 
+        function getCardSize() {
+            return { w: isMobile ? 160 : 220, h: isMobile ? 120 : 140 };
+        }
+
+        function randomPosition(w, h) {
+            const marginW = Math.round(w / 3);
+            const marginH = Math.round(h / 3);
+            return {
+                x: -marginW + Math.random() * (window.innerWidth - w + marginW * 2),
+                y: -marginH + Math.random() * (window.innerHeight - h + marginH * 2)
+            };
+        }
+
+        function overlapsAny(x, y, w, h) {
+            const tolerance = 8;
+            return [...board.querySelectorAll('.card:not(.removing)')].some(card => {
+                const cx = parseFloat(card.style.left);
+                const cy = parseFloat(card.style.top);
+                const cw = card.offsetWidth || w;
+                const ch = card.offsetHeight || h;
+                const overlapX = x + w - tolerance > cx && cx + cw - tolerance > x;
+                const overlapY = y + h - tolerance > cy && cy + ch - tolerance > y;
+                return overlapX && overlapY;
+            });
+        }
+
+        function findFreePosition(w, h) {
+            for (let i = 0; i < 30; i++) {
+                const pos = randomPosition(w, h);
+                if (!overlapsAny(pos.x, pos.y, w, h)) return pos;
+            }
+            return randomPosition(w, h);
+        }
+
         function createPresetNote() {
-            const text = randomItem(config.presetMessages);
-            const color = randomItem(config.colors);
-            const angle = (Math.random() - 0.5) * 12;
-            const cardW = isMobile ? 160 : 220;
-            const cardH = isMobile ? 120 : 140;
-            const maxLeft = Math.max(10, window.innerWidth - cardW - 20);
-            const maxTop = Math.max(10, window.innerHeight - cardH - 90);
+            const { w, h } = getCardSize();
+            const pos = findFreePosition(w, h);
 
             return {
                 id: createId(),
-                text,
-                x: Math.random() * maxLeft + 10,
-                y: Math.random() * maxTop + 10,
-                color,
-                angle,
+                text: randomItem(config.presetMessages),
+                x: pos.x,
+                y: pos.y,
+                color: randomItem(config.colors),
+                angle: (Math.random() - 0.5) * 12,
                 createdAt: Date.now()
             };
         }
@@ -650,6 +813,7 @@
 
         function removeCard(card) {
             if (card.classList.contains('removing')) return;
+            const note = noteFromCard(card);
             card.classList.remove('pop-in');
             card.style.transition = '';
             card.classList.add('removing');
@@ -657,6 +821,7 @@
                 card.remove();
                 updateEmptyState();
                 saveAllNotes();
+                pushUndoBatch([note], '已删除 1 张便签');
             }, 260);
         }
 
@@ -699,14 +864,16 @@
                 const rect = card.getBoundingClientRect();
                 const winW = window.innerWidth;
                 const winH = window.innerHeight;
+                const marginW = Math.round(rect.width / 3);
+                const marginH = Math.round(rect.height / 3);
 
                 let finalX = cardState.currentX;
                 let finalY = cardState.currentY;
 
-                if (finalX < 0) finalX = 0;
-                if (finalX > winW - rect.width) finalX = winW - rect.width;
-                if (finalY < 0) finalY = 0;
-                if (finalY > winH - rect.height) finalY = winH - rect.height;
+                if (finalX < -marginW) finalX = -marginW;
+                if (finalX > winW - rect.width + marginW) finalX = winW - rect.width + marginW;
+                if (finalY < -marginH) finalY = -marginH;
+                if (finalY > winH - rect.height + marginH) finalY = winH - rect.height + marginH;
 
                 if (finalX !== cardState.currentX || finalY !== cardState.currentY) {
                     card.style.transition = 'left 0.3s ease, top 0.3s ease';
@@ -740,24 +907,85 @@
                 setTimeout(() => noteInput.focus(), 100);
             });
 
-            document.getElementById('btnClear').addEventListener('click', () => {
-                const cards = board.querySelectorAll('.card');
+            document.getElementById('btnClear').addEventListener('click', async () => {
+                const cards = [...board.querySelectorAll('.card:not(.removing)')];
                 if (cards.length === 0) return;
-                if (confirm('确定要撕掉所有便签吗？')) {
-                    const backup = collectNotes();
-                    cards.forEach(card => card.remove());
-                    saveBackup(backup);
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+                const ok = await showConfirm('确定要撕掉所有便签吗？');
+                if (!ok) return;
+
+                clearing = true;
+                pushUndoBatch(collectNotes(), `已清空 ${cards.length} 张便签`);
+                cards.forEach((card, i) => {
+                    setTimeout(() => {
+                        card.classList.remove('pop-in');
+                        card.classList.add('removing');
+                        setTimeout(() => card.remove(), 250);
+                    }, i * 35);
+                });
+                setTimeout(() => {
+                    clearing = false;
+                    saveAllNotes();
                     updateEmptyState();
-                    showUndoBar(`已清空 ${backup.length} 张便签`);
-                }
+                }, Math.max(0, (cards.length - 1) * 35) + 300);
             });
 
-            document.getElementById('btnUndo').addEventListener('click', undoClear);
+            document.getElementById('btnUndo').addEventListener('click', undoLast);
 
-            document.getElementById('btnUndoClose').addEventListener('click', () => {
-                hideUndoBar();
-                clearBackup();
+            document.getElementById('btnRandom').addEventListener('click', () => {
+                const notes = [];
+                for (let i = 0; i < 5; i++) {
+                    const note = createPresetNote();
+                    notes.push(note);
+                    createCard({ ...note, animateDelay: Math.min(i * 60, 400) });
+                }
+                saveAllNotes();
+                updateEmptyState();
+            });
+
+            document.getElementById('btnUndoClose').addEventListener('click', closeUndoBar);
+
+            document.getElementById('btnExport').addEventListener('click', () => {
+                const notes = collectNotes();
+                if (notes.length === 0) return;
+                const blob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const d = new Date();
+                a.download = `bianqian-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            document.getElementById('btnImport').addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const data = JSON.parse(reader.result);
+                        if (!Array.isArray(data)) throw new Error('invalid');
+                        data.forEach((note, i) => {
+                            createCard({ ...note, animateDelay: Math.min(i * 35, 600) });
+                        });
+                        saveAllNotes();
+                        applySearch();
+                    } catch (err) {
+                        alert('导入失败：文件格式不正确');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+            });
+
+            searchBox.addEventListener('input', applySearch);
+
+            confirmOk.addEventListener('click', () => resolveConfirm(true));
+            confirmCancel.addEventListener('click', () => resolveConfirm(false));
+            confirmOverlay.addEventListener('click', (e) => {
+                if (e.target === confirmOverlay) resolveConfirm(false);
             });
 
             document.getElementById('btnCancel').addEventListener('click', () => {
@@ -778,10 +1006,23 @@
 
                     const cardW = isMobile ? 160 : 220;
                     const cardH = isMobile ? 120 : 140;
-                    const cx = window.innerWidth / 2 - cardW / 2 + (Math.random() * 40 - 20);
-                    const cy = window.innerHeight / 2 - cardH / 2 + (Math.random() * 40 - 20);
-                    note.x = Math.max(10, Math.min(window.innerWidth - cardW - 10, cx));
-                    note.y = Math.max(10, Math.min(window.innerHeight - cardH - 80, cy));
+                    const cx = window.innerWidth / 2 - cardW / 2;
+                    const cy = window.innerHeight / 2 - cardH / 2;
+                    let posX = Math.max(10, Math.min(window.innerWidth - cardW - 10, cx));
+                    let posY = Math.max(10, Math.min(window.innerHeight - cardH - 80, cy));
+                    for (let i = 0; i < 15; i++) {
+                        const px = cx + (Math.random() * 160 - 80);
+                        const py = cy + (Math.random() * 160 - 80);
+                        const clampedX = Math.max(10, Math.min(window.innerWidth - cardW - 10, px));
+                        const clampedY = Math.max(10, Math.min(window.innerHeight - cardH - 80, py));
+                        if (!overlapsAny(clampedX, clampedY, cardW, cardH)) {
+                            posX = clampedX;
+                            posY = clampedY;
+                            break;
+                        }
+                    }
+                    note.x = posX;
+                    note.y = posY;
 
                     createCard({ ...note, animateDelay: 0 });
                     saveAllNotes();
@@ -795,7 +1036,10 @@
             });
 
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') modalOverlay.classList.remove('open');
+                if (e.key === 'Escape') {
+                    modalOverlay.classList.remove('open');
+                    resolveConfirm(false);
+                }
             });
 
             noteInput.addEventListener('keydown', (e) => {
@@ -807,19 +1051,23 @@
         }
 
         // --- 本地存储 ---
+        function noteFromCard(card) {
+            const cardState = state.cardMap.get(card);
+            return {
+                id: cardState?.id ?? createId(),
+                text: card.querySelector('.card-body').textContent,
+                x: parseFloat(card.style.left),
+                y: parseFloat(card.style.top),
+                color: cardState?.color || card.dataset.color || card.style.backgroundColor,
+                angle: cardState?.angle ?? 0,
+                createdAt: cardState?.createdAt || Date.now()
+            };
+        }
+
         function collectNotes() {
             const notes = [];
-            board.querySelectorAll('.card').forEach(card => {
-                const cardState = state.cardMap.get(card);
-                notes.push({
-                    id: cardState?.id ?? createId(),
-                    text: card.querySelector('.card-body').textContent,
-                    x: parseFloat(card.style.left),
-                    y: parseFloat(card.style.top),
-                    color: cardState?.color || card.dataset.color || card.style.backgroundColor,
-                    angle: cardState?.angle ?? 0,
-                    createdAt: cardState?.createdAt || Date.now()
-                });
+            board.querySelectorAll('.card:not(.removing)').forEach(card => {
+                notes.push(noteFromCard(card));
             });
             return notes;
         }
@@ -828,51 +1076,61 @@
             saveNotes(collectNotes());
         }
 
-        // --- 清空与撤回 ---
+        // --- 撤销栈 ---
+        function pushUndoBatch(notes, message) {
+            undoStack.push({ notes, message });
+            showUndoBar(message);
+        }
+
+        function undoLast() {
+            if (clearing) return;
+            const batch = undoStack.pop();
+            if (!batch) return;
+
+            batch.notes.forEach((note, index) => {
+                createCard({ ...note, animateDelay: Math.min(index * 35, 800) });
+            });
+            saveAllNotes();
+            applySearch();
+
+            if (undoStack.length > 0) {
+                showUndoBar(`已恢复上一步（还可撤销 ${undoStack.length} 步）`);
+            } else {
+                hideUndoBar();
+            }
+        }
+
+        function closeUndoBar() {
+            clearTimeout(undoBarTimer);
+            undoStack.length = 0;
+            hideUndoBar();
+        }
+
+        // --- 提示条与确认弹窗 ---
         function showUndoBar(message) {
+            clearTimeout(undoBarTimer);
             undoText.textContent = message;
             undoBar.classList.add('show');
+            undoBarTimer = setTimeout(() => hideUndoBar(), 6000);
         }
 
         function hideUndoBar() {
             undoBar.classList.remove('show');
         }
 
-        function saveBackup(notes) {
-            try {
-                localStorage.setItem(BACKUP_KEY, JSON.stringify(notes));
-            } catch (e) {
-                console.error('Failed to save backup', e);
-            }
-        }
-
-        function loadBackup() {
-            try {
-                const raw = localStorage.getItem(BACKUP_KEY);
-                if (!raw) return null;
-                const data = JSON.parse(raw);
-                return Array.isArray(data) ? data : null;
-            } catch (e) {
-                console.error('Failed to load backup', e);
-                return null;
-            }
-        }
-
-        function clearBackup() {
-            localStorage.removeItem(BACKUP_KEY);
-        }
-
-        function undoClear() {
-            const backup = loadBackup();
-            if (!backup || backup.length === 0) return;
-
-            backup.forEach((note, index) => {
-                createCard({ ...note, animateDelay: Math.min(index * 35, 800) });
+        function showConfirm(message) {
+            return new Promise(resolve => {
+                confirmResolver = resolve;
+                confirmTitle.textContent = message;
+                confirmOverlay.classList.add('open');
             });
-            clearBackup();
-            hideUndoBar();
-            saveAllNotes();
-            updateEmptyState();
+        }
+
+        function resolveConfirm(result) {
+            if (!confirmResolver) return;
+            confirmOverlay.classList.remove('open');
+            confirmResolver(result);
+            confirmResolver = null;
         }
 
         init();
