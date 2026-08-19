@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>心情便签墙</title>
     <style>
+        @font-face {
+            font-family: 'ZCOOL KuaiLe';
+            src: url('站酷快乐体.ttf') format('truetype');
+            font-display: swap;
+        }
+
         :root {
             --bg-color: #f6f4ef;
             --grid-color: rgba(0, 0, 0, 0.04);
@@ -19,6 +25,7 @@
             --note-blue: #bfdbfe;
             --note-purple: #e2d1f9;
             --note-orange: #ffe0c2;
+            --card-line: rgba(0, 0, 0, 0.08);
         }
 
         * {
@@ -29,7 +36,7 @@
         }
 
         body {
-            font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-color);
             background-image: 
                 linear-gradient(0deg, var(--grid-color) 1px, transparent 0),
@@ -67,9 +74,9 @@
         /* --- Card Styles --- */
         .card {
             position: absolute;
-            width: 220px;
-            min-height: 140px;
-            background: #fff;
+            width: var(--card-w, 220px);
+            min-height: var(--card-h, 140px);
+            background-color: var(--card-bg, #fff);
             box-shadow: var(--card-shadow);
             opacity: 0;
             transform: rotate(var(--angle, 0deg)) scale(0.8);
@@ -83,6 +90,48 @@
             flex-direction: column;
             cursor: grab;
             border-bottom-right-radius: 40px 5px;
+        }
+
+        /* --- Card Shapes --- */
+        .card.shape-fold {
+            border-radius: 0;
+            clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%);
+        }
+
+        .card.shape-fold::before {
+            display: none;
+        }
+
+        .card.shape-bubble {
+            border-radius: 18px;
+        }
+
+        .card.shape-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 35px;
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 16px solid var(--card-bg, #fff);
+            z-index: 0;
+        }
+
+        .card.shape-wave {
+            border-radius: 0;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), 88% 100%, 76% calc(100% - 18px), 64% 100%, 52% calc(100% - 18px), 40% 100%, 28% calc(100% - 18px), 16% 100%, 4% calc(100% - 18px), 0 100%);
+        }
+
+        .card.shape-wave::before {
+            display: none;
+        }
+
+        .card-header,
+        .card-body {
+            position: relative;
+            z-index: 1;
         }
 
         .card.appear {
@@ -99,9 +148,10 @@
 
         .card.removing {
             opacity: 0;
-            transform: rotate(var(--rm-angle, 5deg)) scale(0.5);
+            transform: rotate(var(--rm-angle, 5deg)) scale(0.4);
+            filter: blur(2px);
             box-shadow: 0 0 0 rgba(60, 40, 30, 0);
-            transition: transform 0.25s ease-in, opacity 0.25s ease-in, box-shadow 0.25s ease-in;
+            transition: transform 0.3s cubic-bezier(0.55, 0, 0.55, 0.2), opacity 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
             pointer-events: none;
         }
 
@@ -172,13 +222,18 @@
         }
 
         .card-body {
-            padding: 10px 18px 20px;
+            padding: 12px 18px 20px;
             font-size: 16px;
-            line-height: 1.5;
+            line-height: 28px;
             font-weight: 600;
             color: var(--note-text);
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            font-family: 'ZCOOL KuaiLe', 'Comic Sans MS', 'Chalkboard SE', sans-serif;
             word-wrap: break-word;
+            white-space: pre-wrap;
+            background-image:
+                linear-gradient(var(--card-line) 1px, transparent 1px);
+            background-size: 100% 28px;
+            background-position: 0 12px;
         }
 
         /* --- Toolbar Styles --- */
@@ -358,8 +413,8 @@
         .modal-btn.confirm { background: #333; color: #fff; }
 
         @media (max-width: 768px) {
-            .card { width: 160px; min-height: 120px; }
-            .card-body { padding: 10px 14px 14px; font-size: 14px; }
+            .card { width: var(--card-w, 160px); min-height: var(--card-h, 120px); }
+            .card-body { padding: 10px 14px 14px; font-size: 14px; line-height: 26px; background-size: 100% 26px; background-position: 0 10px; }
             .toolbar { padding: 10px 20px; bottom: calc(54px + env(safe-area-inset-bottom, 0px)); }
             .btn { width: 40px; height: 40px; font-size: 18px; }
         }
@@ -373,6 +428,7 @@
                 --card-shadow: 2px 6px 16px rgba(0, 0, 0, 0.45);
                 --card-shadow-drag: 8px 20px 40px rgba(0, 0, 0, 0.6);
                 --tape-color: rgba(255, 255, 255, 0.2);
+                --card-line: rgba(255, 255, 255, 0.08);
             }
 
             .toolbar { background: rgba(30, 29, 28, 0.88); }
@@ -494,14 +550,30 @@
             50% { transform: translateY(-8px); }
         }
 
+        /* 生成动画 - 弹簧弹出，带轻微过冲回弹 */
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.5) rotate(var(--angle, 0deg)); }
-            70% { opacity: 1; transform: scale(1.06) rotate(var(--angle, 0deg)); }
-            100% { opacity: 1; transform: scale(1) rotate(var(--angle, 0deg)); }
+            0% {
+                opacity: 0;
+                transform: rotate(calc(var(--angle, 0deg) - 8deg)) scale(0.3);
+            }
+            55% {
+                opacity: 1;
+                transform: rotate(calc(var(--angle, 0deg) + 2deg)) scale(1.08);
+            }
+            75% {
+                transform: rotate(calc(var(--angle, 0deg) - 1deg)) scale(0.97);
+            }
+            90% {
+                transform: rotate(var(--angle, 0deg)) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: rotate(var(--angle, 0deg)) scale(1);
+            }
         }
 
         .card.pop-in {
-            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -588,6 +660,12 @@
 
         const config = {
             colors: ['#fff2a8', '#ffd6e0', '#c6f6d5', '#bfdbfe', '#e2d1f9', '#ffe0c2'],
+            shapes: ['', '', '', 'shape-fold', 'shape-bubble', 'shape-wave'],
+            sizes: [
+                { w: 180, h: 120, label: 'small' },
+                { w: 220, h: 140, label: 'medium' },
+                { w: 280, h: 180, label: 'large' }
+            ],
             presetMessages: [
                 '保持好心情', '多喝水哦', '今天辛苦啦', '早点休息', '记得吃水果',
                 '加油，你可以的', '祝你顺利', '保持微笑呀', '愿烦恼消失',
@@ -699,8 +777,19 @@
             });
         }
 
-        function getCardSize() {
-            return { w: isMobile ? 160 : 220, h: isMobile ? 120 : 140 };
+        function getCardSize(shape = '', sizeLabel = '') {
+            const size = config.sizes.find(s => s.label === sizeLabel) || config.sizes[1];
+            if (isMobile) {
+                return { w: Math.round(size.w * 0.75), h: Math.round(size.h * 0.75) };
+            }
+            return { w: size.w, h: size.h };
+        }
+
+        function getSizeForText(text) {
+            const len = (text || '').length;
+            if (len <= 8) return 'small';
+            if (len <= 20) return 'medium';
+            return 'large';
         }
 
         function getEdgeMargin(w, h) {
@@ -740,15 +829,20 @@
         }
 
         function createPresetNote() {
-            const { w, h } = getCardSize();
+            const shape = randomItem(config.shapes);
+            const text = randomItem(config.presetMessages);
+            const sizeLabel = getSizeForText(text);
+            const { w, h } = getCardSize(shape, sizeLabel);
             const pos = findFreePosition(w, h);
 
             return {
                 id: createId(),
-                text: randomItem(config.presetMessages),
+                text: text,
                 x: pos.x,
                 y: pos.y,
                 color: randomItem(config.colors),
+                shape: shape,
+                size: sizeLabel,
                 angle: (Math.random() - 0.5) * 12,
                 createdAt: Date.now()
             };
@@ -756,14 +850,23 @@
 
         // --- 创建卡片 ---
         function createCard(options = {}) {
-            const { id, text, x, y, color, angle, createdAt, animateDelay = 0 } = options;
+            const { id, text, x, y, color, shape, size, angle, createdAt, animateDelay = 0 } = options;
 
             const card = document.createElement('div');
             card.className = 'card';
             card.dataset.id = id ?? '';
             card.dataset.color = color || '';
+            card.dataset.shape = shape || '';
+            card.dataset.size = size || '';
+            if (shape) card.classList.add(shape);
             card.style.setProperty('--angle', `${angle ?? 0}deg`);
-            card.style.background = color || randomItem(config.colors);
+            const bgColor = color || randomItem(config.colors);
+            card.style.setProperty('--card-bg', bgColor);
+            card.style.backgroundColor = bgColor;
+            const sizeLabel = size || getSizeForText(text);
+            const { w: cardW, h: cardH } = getCardSize(shape, sizeLabel);
+            card.style.setProperty('--card-w', `${cardW}px`);
+            card.style.setProperty('--card-h', `${cardH}px`);
             card.style.left = `${x ?? 10}px`;
             card.style.top = `${y ?? 10}px`;
             card.style.zIndex = ++state.zIndex;
@@ -786,6 +889,8 @@
                 id,
                 angle: angle ?? 0,
                 color: color || '',
+                shape: shape || '',
+                size: sizeLabel,
                 createdAt: createdAt || Date.now(),
                 currentX: x ?? 10,
                 currentY: y ?? 10,
@@ -831,7 +936,7 @@
                 updateEmptyState();
                 saveAllNotes();
                 pushUndoBatch([note], '已删除 1 张便签');
-            }, 260);
+            }, 300);
         }
 
         // --- 拖拽核心 ---
@@ -928,14 +1033,14 @@
                         card.classList.remove('pop-in');
                         card.style.setProperty('--rm-angle', `${(Math.random() - 0.5) * 18}deg`);
                         card.classList.add('removing');
-                        setTimeout(() => card.remove(), 250);
+                        setTimeout(() => card.remove(), 300);
                     }, i * 35 + Math.random() * 60);
                 });
                 setTimeout(() => {
                     clearing = false;
                     saveAllNotes();
                     updateEmptyState();
-                }, Math.max(0, (cards.length - 1) * 35 + 60) + 300);
+                }, Math.max(0, (cards.length - 1) * 35 + 60) + 350);
             });
 
             document.getElementById('btnUndo').addEventListener('click', undoLast);
@@ -1026,9 +1131,9 @@ try {
                     note.text = text;
                     note.id = createId();
                     note.createdAt = Date.now();
+                    note.size = getSizeForText(text);
 
-                    const cardW = isMobile ? 160 : 220;
-                    const cardH = isMobile ? 120 : 140;
+                    const { w: cardW, h: cardH } = getCardSize(note.shape, note.size);
                     const cx = window.innerWidth / 2 - cardW / 2;
                     const cy = window.innerHeight / 2 - cardH / 2;
                     let posX = Math.max(10, Math.min(window.innerWidth - cardW - 10, cx));
@@ -1082,6 +1187,8 @@ try {
                 x: parseFloat(card.style.left),
                 y: parseFloat(card.style.top),
                 color: cardState?.color || card.dataset.color || card.style.backgroundColor,
+                shape: cardState?.shape || card.dataset.shape || '',
+                size: cardState?.size || card.dataset.size || getSizeForText(card.querySelector('.card-body').textContent),
                 angle: cardState?.angle ?? 0,
                 createdAt: cardState?.createdAt || Date.now()
             };
