@@ -2,30 +2,41 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>心情便签墙</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#EDE7D8">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23F6F1E4'/%3E%3Crect x='20' y='18' width='60' height='10' rx='3' fill='%23EBD68C'/%3E%3Crect x='20' y='35' width='60' height='3' fill='%23C2452D' opacity='.85'/%3E%3Crect x='20' y='41' width='60' height='3' fill='%23C2452D' opacity='.85'/%3E%3Crect x='20' y='52' width='44' height='4' rx='2' fill='%232B3A55' opacity='.75'/%3E%3Crect x='20' y='63' width='52' height='4' rx='2' fill='%232B3A55' opacity='.5'/%3E%3Ccircle cx='68' cy='72' r='11' fill='none' stroke='%23C2452D' stroke-width='3' opacity='.8'/%3E%3C/svg%3E">
+    <title>心事借阅卡</title>
     <style>
-        @font-face {
-            font-family: 'ZCOOL KuaiLe';
-            src: url('站酷快乐体.ttf') format('truetype');
-            font-display: swap;
-        }
-
         :root {
-            --bg-color: #f6f4ef;
-            --grid-color: rgba(0, 0, 0, 0.04);
-            --tape-color: rgba(255, 255, 255, 0.45);
-            --text-color: #3e3a39;
-            --note-text: #3e3a39;
-            --card-shadow: 2px 6px 16px rgba(80, 60, 50, 0.10);
-            --card-shadow-drag: 8px 20px 40px rgba(60, 40, 30, 0.25);
-            --note-yellow: #fff2a8;
-            --note-pink: #ffd6e0;
-            --note-mint: #c6f6d5;
-            --note-blue: #bfdbfe;
-            --note-purple: #e2d1f9;
-            --note-orange: #ffe0c2;
-            --card-line: rgba(0, 0, 0, 0.08);
+            /* 全站统一动效五件套 */
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+            --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+            --dur-micro: 120ms;
+            --dur-short: 220ms;
+            --dur-long: 420ms;
+            /* 借阅卡色板：60 卡纸米白 / 30 案桌暖木 / 10 钢笔·红戳点缀 */
+            --color-focus: #3E5C8F;
+            --bg-color: #EDE7D8;
+            --grid-color: rgba(122, 96, 58, 0.06);
+            --paper: #F6F1E4;
+            --paper-deep: #EFE8D6;
+            --ink: #2B3A55;
+            --ink-soft: #6B5D4A;
+            --ink-faint: #8A7A5E;
+            --rule-red: rgba(194, 69, 45, 0.55);
+            --card-line: rgba(107, 93, 74, 0.18);
+            --stamp: #C2452D;
+            --lend: #3E5C8F;
+            --font-mono: "Cascadia Code", "Consolas", "Courier New", monospace;
+            --spine-yellow: #EBD68C;
+            --spine-pink: #E8BDC6;
+            --spine-mint: #B5D4BC;
+            --spine-blue: #B0C6E2;
+            --spine-purple: #C9BADE;
+            --spine-orange: #E5C29E;
+            --card-shadow: 2px 6px 16px rgba(80, 62, 40, 0.14);
+            --card-shadow-drag: 8px 22px 44px rgba(60, 44, 26, 0.28);
         }
 
         * {
@@ -36,13 +47,13 @@
         }
 
         body {
-            font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: "Kaiti SC", "STKaiti", "KaiTi", "DFKai-SB", "BiauKai", "Noto Serif CJK SC", serif;
             background-color: var(--bg-color);
-            background-image: 
+            background-image:
                 linear-gradient(0deg, var(--grid-color) 1px, transparent 0),
                 linear-gradient(90deg, var(--grid-color) 1px, transparent 0);
             background-size: 40px 40px;
-            color: var(--text-color);
+            color: var(--ink);
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
@@ -52,13 +63,14 @@
             touch-action: manipulation;
         }
 
+        /* 案桌灯光：极轻暖光，服务「档案室」语境 */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(circle at 20% 20%, rgba(255, 210, 160, 0.12), transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(160, 210, 255, 0.10), transparent 40%);
+                radial-gradient(circle at 18% 12%, rgba(255, 222, 170, 0.14), transparent 42%),
+                radial-gradient(circle at 84% 86%, rgba(120, 96, 58, 0.08), transparent 46%);
             pointer-events: none;
             z-index: 0;
         }
@@ -71,67 +83,69 @@
             z-index: 1;
         }
 
-        /* --- Card Styles --- */
+        /* --- 馆牌 --- */
+        .desk-plate {
+            position: fixed;
+            top: 18px;
+            left: 24px;
+            z-index: 9999;
+            background: var(--paper);
+            padding: 10px 16px 9px;
+            border-radius: 4px;
+            box-shadow: var(--card-shadow);
+            transform: rotate(-1.2deg);
+            border-top: 8px solid var(--spine-yellow);
+        }
+
+        .desk-name {
+            display: block;
+            font-size: 17px;
+            letter-spacing: 6px;
+            color: var(--ink);
+        }
+
+        .desk-sub {
+            display: block;
+            margin-top: 3px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--ink-faint);
+        }
+
+        @media (max-width: 760px) {
+            .desk-plate { display: none; }
+        }
+
+        /* --- 借书卡 --- */
         .card {
             position: absolute;
             width: var(--card-w, 220px);
             min-height: var(--card-h, 140px);
-            background-color: var(--card-bg, #fff);
+            background-color: var(--paper);
             box-shadow: var(--card-shadow);
             opacity: 0;
             transform: rotate(var(--angle, 0deg)) scale(0.8);
             transform-origin: center top;
             transition:
-                transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-                opacity 0.3s ease,
-                box-shadow 0.3s ease;
+                transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), /* 弹性人格保留 */
+                opacity var(--dur-short) var(--ease-out),
+                box-shadow var(--dur-short) var(--ease-out);
             touch-action: none;
             display: flex;
             flex-direction: column;
             cursor: grab;
-            border-bottom-right-radius: 40px 5px;
         }
 
-        /* --- Card Shapes --- */
-        .card.shape-fold {
-            border-radius: 0;
-            clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%);
-        }
-
-        .card.shape-fold::before {
-            display: none;
-        }
-
-        .card.shape-bubble {
-            border-radius: 18px;
-        }
-
-        .card.shape-bubble::after {
+        /* 顶部书脊色条：六色索引头，卡面统一米白 */
+        .card::before {
             content: '';
             position: absolute;
-            bottom: -14px;
-            left: 35px;
-            width: 0;
-            height: 0;
-            border-left: 14px solid transparent;
-            border-right: 14px solid transparent;
-            border-top: 16px solid var(--card-bg, #fff);
-            z-index: 0;
-        }
-
-        .card.shape-wave {
-            border-radius: 0;
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 18px), 88% 100%, 76% calc(100% - 18px), 64% 100%, 52% calc(100% - 18px), 40% 100%, 28% calc(100% - 18px), 16% 100%, 4% calc(100% - 18px), 0 100%);
-        }
-
-        .card.shape-wave::before {
-            display: none;
-        }
-
-        .card-header,
-        .card-body {
-            position: relative;
-            z-index: 1;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: var(--spine, var(--spine-yellow));
         }
 
         .card.appear {
@@ -142,7 +156,7 @@
         @media (hover: hover) {
             .card:hover {
                 transform: translateY(-4px) rotate(var(--angle, 0deg)) scale(1.03);
-                box-shadow: 0 12px 28px rgba(60, 40, 30, 0.18);
+                box-shadow: 0 12px 28px rgba(60, 44, 26, 0.2);
             }
         }
 
@@ -150,34 +164,18 @@
             opacity: 0;
             transform: rotate(var(--rm-angle, 5deg)) scale(0.4);
             filter: blur(2px);
-            box-shadow: 0 0 0 rgba(60, 40, 30, 0);
-            transition: transform 0.3s cubic-bezier(0.55, 0, 0.55, 0.2), opacity 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+            box-shadow: 0 0 0 rgba(60, 44, 26, 0);
+            transition: transform 0.3s var(--ease-in), opacity 0.3s var(--ease-in), box-shadow 0.3s var(--ease-in), filter 0.3s var(--ease-in);
             pointer-events: none;
         }
 
         .card.hidden {
             opacity: 0;
             transform: rotate(var(--angle, 0deg)) scale(0.85);
-            box-shadow: 0 0 0 rgba(60, 40, 30, 0);
+            box-shadow: 0 0 0 rgba(60, 44, 26, 0);
             visibility: hidden;
             pointer-events: none;
-            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease, visibility 0s 0.3s;
-        }
-
-        /* 拟物化胶带效果 */
-        .card::before {
-            content: '';
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%) rotate(-2deg);
-            width: 90px;
-            height: 25px;
-            background-color: var(--tape-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            backdrop-filter: blur(2px);
-            z-index: 1;
-            opacity: 0.8;
+            transition: transform 0.3s var(--ease-in), opacity 0.3s var(--ease-in), box-shadow 0.3s var(--ease-in), visibility 0s 0.3s;
         }
 
         .card.dragging {
@@ -189,54 +187,151 @@
             will-change: transform, left, top;
         }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px 5px;
+        /* 回形针变体 */
+        .card-clip {
+            display: none;
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            width: 24px;
+            height: 28px;
+            transform: rotate(7deg);
+            z-index: 2;
+            filter: drop-shadow(0 1px 1px rgba(60, 44, 26, 0.2));
         }
 
-        .card-time {
+        .shape-clip .card-clip { display: block; }
+
+        /* 装订孔变体 */
+        .shape-punch::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 46px;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            box-shadow: inset 0 1px 2px rgba(60, 44, 26, 0.3), 0 46px 0 var(--bg-color), 0 47px 0 rgba(60, 44, 26, 0.12);
+        }
+
+        .shape-punch .card-body { padding-left: 36px; }
+
+        .card-head,
+        .card-body {
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 20px 14px 6px;
+        }
+
+        .card-no {
+            font-family: var(--font-mono);
             font-size: 11px;
-            color: rgba(0, 0, 0, 0.4);
-            font-weight: 500;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--ink-soft);
+        }
+
+        .card-date {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--ink-faint);
+            margin-left: auto;
         }
 
         .card-close {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
+            margin: -4px -6px -4px 0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            opacity: 0.5;
-            transition: opacity 0.2s, background 0.2s;
-            font-size: 16px;
+            opacity: 0.45;
+            font-size: 17px;
             line-height: 1;
+            color: var(--ink);
+            transition: opacity var(--dur-short) var(--ease-out), background var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
         }
 
         .card-close:hover {
             opacity: 1;
-            background: rgba(0,0,0,0.1);
+            background: rgba(194, 69, 45, 0.12);
+            color: var(--stamp);
+        }
+
+        /* 借书卡红色双线：母题的核心识别线 */
+        .card-rule {
+            height: 5px;
+            margin: 0 14px;
+            border-top: 1.5px solid var(--rule-red);
+            border-bottom: 1px solid var(--rule-red);
         }
 
         .card-body {
-            padding: 12px 18px 20px;
-            font-size: 16px;
-            line-height: 28px;
-            font-weight: 600;
-            color: var(--note-text);
-            font-family: 'ZCOOL KuaiLe', 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            padding: 10px 16px 40px;
+            font-size: 17px;
+            line-height: 30px;
+            color: var(--ink);
             word-wrap: break-word;
             white-space: pre-wrap;
             background-image:
                 linear-gradient(var(--card-line) 1px, transparent 1px);
-            background-size: 100% 28px;
-            background-position: 0 12px;
+            background-size: 100% 30px;
+            background-position: 0 10px;
         }
 
-        /* --- Toolbar Styles --- */
+        /* --- 检索 --- */
+        .search-wrap {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+        }
+
+        .search-box {
+            background: var(--paper);
+            border: 1px solid rgba(107, 93, 74, 0.18);
+            outline: none;
+            border-radius: 4px;
+            padding: 10px 20px 10px 42px;
+            width: 200px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--ink);
+            box-shadow: 0 4px 15px rgba(60, 44, 26, 0.12);
+            transition: width var(--dur-short) var(--ease-out), box-shadow var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+            touch-action: manipulation;
+        }
+
+        .search-box:focus {
+            width: 260px;
+            border-color: rgba(62, 92, 143, 0.5);
+            box-shadow: 0 4px 20px rgba(60, 44, 26, 0.16);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--ink-faint);
+            fill: currentColor;
+            pointer-events: none;
+        }
+
+        /* --- 登记台（工具栏） --- */
         .toolbar {
             position: fixed;
             bottom: calc(64px + env(safe-area-inset-bottom, 0px));
@@ -244,50 +339,54 @@
             transform: translateX(-50%);
             display: flex;
             gap: 15px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 12px 25px;
-            border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            background: var(--paper);
+            border: 1px solid rgba(107, 93, 74, 0.16);
+            padding: 12px 22px;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(60, 44, 26, 0.18);
             z-index: 10000;
-            transition: transform 0.3s ease;
+            transition: transform var(--dur-short) var(--ease-out);
             animation: toolbarIn 0.6s 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
         }
-        
+
         @media (max-height: 500px) {
             .toolbar { display: none; }
         }
 
         .btn {
             border: none;
-            background: none;
+            background: var(--paper-deep);
             cursor: pointer;
-            font-size: 20px;
             width: 44px;
             height: 44px;
-            border-radius: 50%;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s, box-shadow 0.2s, color 0.2s, background 0.2s;
-            color: #555;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), background var(--dur-short) var(--ease-out);
+            color: var(--ink);
+            box-shadow: 0 2px 6px rgba(60, 44, 26, 0.14);
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            color: #000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            color: #1D2940;
+            box-shadow: 0 5px 14px rgba(60, 44, 26, 0.2);
         }
 
         .btn:active {
             transform: scale(0.95);
         }
 
-        .btn.active {
-            background: #333;
+        /* 主 CTA：登记一张（每屏唯一强调色） */
+        .btn-primary {
+            background: var(--stamp);
+            color: #FBF6EA;
+        }
+
+        .btn-primary:hover {
             color: #fff;
+            background: #B03A26;
         }
 
         .btn svg {
@@ -298,52 +397,11 @@
             display: block;
         }
 
-        /* --- 搜索框 --- */
-        .search-wrap {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10000;
-        }
-
-        .search-box {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            border: none;
-            outline: none;
-            border-radius: 50px;
-            padding: 10px 24px 10px 42px;
-            width: 200px;
-            font-size: 14px;
-            color: var(--text-color);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease, box-shadow 0.3s ease;
-            touch-action: manipulation;
-        }
-
-        .search-box:focus {
-            width: 260px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-            color: rgba(62, 58, 57, 0.45);
-            fill: currentColor;
-            pointer-events: none;
-        }
-
-        /* --- Modal Styles --- */
+        /* --- 弹窗 --- */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.3);
+            background: rgba(43, 34, 22, 0.35);
             backdrop-filter: blur(3px);
             z-index: 20000;
             display: flex;
@@ -351,7 +409,7 @@
             justify-content: center;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s;
+            transition: opacity var(--dur-short) var(--ease-out);
         }
 
         .modal-overlay.open {
@@ -360,14 +418,15 @@
         }
 
         .modal {
-            background: #fff;
-            padding: 25px;
-            border-radius: 20px;
+            background: var(--paper);
+            padding: 24px;
+            border-radius: 6px;
             width: 90%;
             max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            border-top: 10px solid var(--spine-yellow);
+            box-shadow: 0 20px 60px rgba(43, 34, 22, 0.3);
             transform: translateY(20px) scale(0.92);
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity var(--dur-short) var(--ease-out);
         }
 
         .modal-overlay.open .modal {
@@ -375,24 +434,40 @@
         }
 
         .modal h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
+            margin-bottom: 4px;
+            font-size: 19px;
+            letter-spacing: 2px;
+        }
+
+        .modal-kicker {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--stamp);
+            margin-bottom: 10px;
         }
 
         .modal textarea {
             width: 100%;
             height: 100px;
-            padding: 10px;
-            border: 2px solid #eee;
-            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(107, 93, 74, 0.3);
+            border-radius: 4px;
             resize: none;
             font-size: 16px;
-            margin-bottom: 15px;
+            font-family: inherit;
+            line-height: 30px;
+            margin: 12px 0 16px;
             outline: none;
+            background:
+                linear-gradient(var(--card-line) 1px, transparent 1px) 0 0 / 100% 30px,
+                var(--paper);
+            color: var(--ink);
         }
-        
+
         .modal textarea:focus {
-            border-color: #aaa;
+            border-color: rgba(62, 92, 143, 0.55);
         }
 
         .modal-actions {
@@ -402,60 +477,79 @@
         }
 
         .modal-btn {
-            padding: 8px 20px;
-            border-radius: 8px;
+            padding: 9px 20px;
+            border-radius: 4px;
             border: none;
             cursor: pointer;
-            font-weight: 600;
+            font-family: inherit;
+            font-size: 15px;
+            letter-spacing: 1px;
+            transition: transform var(--dur-micro) var(--ease-out), background var(--dur-short) var(--ease-out);
         }
 
-        .modal-btn.cancel { background: #f0f0f0; color: #666; }
-        .modal-btn.confirm { background: #333; color: #fff; }
+        .modal-btn:active { transform: scale(0.96); }
+        .modal-btn.cancel { background: var(--paper-deep); color: var(--ink-soft); border: 1px solid rgba(107, 93, 74, 0.2); }
+        .modal-btn.confirm { background: var(--stamp); color: #FBF6EA; }
+        .modal-btn.confirm:hover { background: #B03A26; }
 
         @media (max-width: 768px) {
             .card { width: var(--card-w, 160px); min-height: var(--card-h, 120px); }
-            .card-body { padding: 10px 14px 14px; font-size: 14px; line-height: 26px; background-size: 100% 26px; background-position: 0 10px; }
-            .toolbar { padding: 10px 20px; bottom: calc(54px + env(safe-area-inset-bottom, 0px)); }
-            .btn { width: 40px; height: 40px; font-size: 18px; }
+            .card-body { padding: 8px 12px 34px; font-size: 15px; line-height: 28px; background-size: 100% 28px; }
+            .toolbar { padding: 10px 16px; gap: 10px; bottom: calc(54px + env(safe-area-inset-bottom, 0px)); }
+            .btn { width: 44px; height: 44px; }
         }
 
-        /* --- 暗色模式 --- */
+        /* --- 键盘焦点与选区（全站统一微交互） --- */
+        .btn:focus-visible,
+        .search-box:focus-visible,
+        .modal-btn:focus-visible,
+        .undo-btn:focus-visible,
+        .undo-close:focus-visible {
+            outline: 2px solid var(--color-focus);
+            outline-offset: 3px;
+        }
+
+        ::selection {
+            background: rgba(194, 69, 45, 0.22);
+            color: var(--ink);
+        }
+
+        /* --- 暗色：夜间档案室 --- */
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #191817;
-                --grid-color: rgba(255, 255, 255, 0.05);
-                --text-color: #e8e4de;
-                --card-shadow: 2px 6px 16px rgba(0, 0, 0, 0.45);
-                --card-shadow-drag: 8px 20px 40px rgba(0, 0, 0, 0.6);
-                --tape-color: rgba(255, 255, 255, 0.2);
-                --card-line: rgba(255, 255, 255, 0.08);
+                --bg-color: #191713;
+                --grid-color: rgba(235, 214, 140, 0.05);
+                --paper: #2A2620;
+                --paper-deep: #241F1A;
+                --ink: #E6DCC8;
+                --ink-soft: #BFB29A;
+                --ink-faint: #938570;
+                --rule-red: rgba(224, 106, 82, 0.5);
+                --card-line: rgba(235, 214, 140, 0.12);
+                --stamp: #D96A4E;
+                --lend: #8FA9CE;
+                --card-shadow: 2px 6px 16px rgba(0, 0, 0, 0.5);
+                --card-shadow-drag: 8px 22px 44px rgba(0, 0, 0, 0.65);
             }
 
-            .toolbar { background: rgba(30, 29, 28, 0.88); }
-            .btn { background: #2b2a28; color: #bdb9b3; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
-            .btn:hover { color: #fff; }
-            .search-box { background: rgba(30, 29, 28, 0.88); color: var(--text-color); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35); }
-            .search-box::placeholder { color: rgba(255, 255, 255, 0.4); }
-            .search-icon { color: rgba(255, 255, 255, 0.4); }
-            .modal { background: #262524; }
-            .modal h3 { color: var(--text-color); }
-            .modal textarea { background: #1d1c1b; border-color: #3a3937; color: var(--text-color); }
-            .modal textarea::placeholder { color: rgba(255, 255, 255, 0.35); }
-            .modal-btn.cancel { background: #3a3937; color: #cfcbc5; }
-            .empty-state { color: rgba(255, 255, 255, 0.35); }
+            .modal-overlay { background: rgba(10, 8, 5, 0.5); }
+            .search-box { border-color: rgba(235, 214, 140, 0.16); }
+            .search-box::placeholder { color: rgba(230, 220, 200, 0.35); }
+            .btn { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+            .btn-primary { color: #2A1812; }
         }
 
-        /* --- Empty State --- */
+        /* --- 空状态 --- */
         .empty-state {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            color: rgba(62, 58, 57, 0.35);
+            color: var(--ink-faint);
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.4s ease;
+            transition: opacity var(--dur-long) var(--ease-out);
             z-index: 10;
         }
 
@@ -470,8 +564,8 @@
         }
 
         .empty-icon svg {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
         }
 
         .empty-state p {
@@ -479,7 +573,7 @@
             letter-spacing: 2px;
         }
 
-        /* --- Undo Bar --- */
+        /* --- 撤销栏 --- */
         .undo-bar {
             position: fixed;
             top: 78px;
@@ -490,13 +584,13 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(51, 51, 51, 0.92);
-            color: #fff;
+            background: rgba(43, 37, 28, 0.94);
+            color: #EFE8D6;
             padding: 10px 14px 10px 20px;
-            border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
             z-index: 15000;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity var(--dur-short) var(--ease-out);
         }
 
         .undo-bar.show {
@@ -511,14 +605,15 @@
 
         .undo-btn {
             border: none;
-            background: #fff;
-            color: #333;
+            background: var(--paper);
+            color: var(--stamp);
+            font-family: inherit;
             font-weight: 700;
             font-size: 13px;
             padding: 6px 16px;
-            border-radius: 50px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform var(--dur-short) var(--ease-out);
         }
 
         .undo-btn:hover {
@@ -528,7 +623,7 @@
         .undo-close {
             border: none;
             background: none;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(239, 232, 214, 0.7);
             font-size: 16px;
             cursor: pointer;
             padding: 4px;
@@ -539,7 +634,7 @@
             color: #fff;
         }
 
-        /* --- Animations --- */
+        /* --- 动画 --- */
         @keyframes toolbarIn {
             0% { opacity: 0; transform: translate(-50%, 20px); }
             100% { opacity: 1; transform: translate(-50%, 0); }
@@ -550,7 +645,7 @@
             50% { transform: translateY(-8px); }
         }
 
-        /* 生成动画 - 弹簧弹出，带轻微过冲回弹 */
+        /* 生成动画 - 弹簧弹出（弹性人格保留） */
         @keyframes popIn {
             0% {
                 opacity: 0;
@@ -588,44 +683,52 @@
 </head>
 <body>
     <div id="board"></div>
-    <div class="search-wrap">
-        <svg class="search-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M442.523451 201.280344a241.609739 241.609739 0 0 0-241.243107 241.243107 36.663086 36.663086 0 0 0 36.663086 36.663087 38.496241 38.496241 0 0 0 38.862871-36.663087 163.883996 163.883996 0 0 1 165.71715-163.883995 38.862871 38.862871 0 0 0 0-77.359112z"></path><path d="M1012.634443 958.006445l-231.344074-231.710706A442.156821 442.156821 0 0 0 442.523451 0 442.523451 442.523451 0 0 0 0 442.523451a442.523451 442.523451 0 0 0 442.523451 442.156821 439.957035 439.957035 0 0 0 284.138919-103.389903l230.977444 231.344074a38.862871 38.862871 0 0 0 54.994629-54.627998zM183.315431 700.631579a366.630863 366.630863 0 1 1 256.641604 106.689581 364.064447 364.064447 0 0 1-256.641604-106.689581z"></path></svg>
-        <input type="search" class="search-box" id="searchBox" placeholder="搜索便签" autocomplete="off" />
-    </div>
-    <div class="empty-state" id="emptyState">
-        <span class="empty-icon"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M23.272727 991.418182l132.654546-295.563637 162.909091 162.909091z" fill="#EDDBC8"></path><path d="M763.345455 86.109091L155.927273 695.854545l162.909091 162.909091 609.745454-607.418181z" fill="#EDCC8C"></path><path d="M977.454545 134.981818l-97.745454-97.745454c-18.618182-18.618182-46.545455-18.618182-65.163636 0l-48.872728 48.872727 165.236364 165.236364 46.545454-48.872728c18.618182-18.618182 18.618182-48.872727 0-67.490909z" fill="#E2BAD1"></path></svg></span>
-        <p>墙上空空如也，写一张吧</p>
-    </div>
-    <div class="empty-state" id="searchEmpty">
-        <span class="empty-icon"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M918.144 105.877333c27.776 27.797333 27.306667 73.344-1.066667 101.738667L634.282667 490.666667c-28.373333 28.373333-73.877333 28.842667-101.653334 1.066666-27.776-27.818667-27.306667-73.365333 1.066667-101.76L816.490667 106.944c28.373333-28.373333 73.877333-28.842667 101.653333-1.045333zM492.117333 532.266667c27.776 27.818667 27.306667 73.365333-1.066666 101.76L208.256 917.056c-28.373333 28.373333-73.877333 28.842667-101.653333 1.045333-27.776-27.797333-27.306667-73.344 1.066666-101.738666L390.464 533.333333c28.373333-28.373333 73.877333-28.842667 101.653333-1.066666z" fill="#9ECCF5" opacity=".955"></path><path d="M916.864 917.589333c-27.776 27.797333-73.28 27.328-101.632-1.066666L106.922667 207.637333c-28.373333-28.373333-28.842667-73.941333-1.066667-101.738666s73.28-27.306667 101.653333 1.066666l708.309334 708.906667c28.352 28.373333 28.821333 73.941333 1.045333 101.738667z" fill="#48A2EF" opacity=".955"></path></svg></span>
-        <p>没有找到相关便签</p>
+
+    <div class="desk-plate" aria-hidden="true">
+        <span class="desk-name">心事借阅处</span>
+        <span class="desk-sub">HEART LENDING DESK · 自由取阅 · 随手归还</span>
     </div>
 
-    <!-- 底部工具栏 -->
+    <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M442.523451 201.280344a241.609739 241.609739 0 0 0-241.243107 241.243107 36.663086 36.663086 0 0 0 36.663086 36.663087 38.496241 38.496241 0 0 0 38.862871-36.663087 163.883996 163.883996 0 0 1 165.71715-163.883995 38.862871 38.862871 0 0 0 0-77.359112z"></path><path d="M1012.634443 958.006445l-231.344074-231.710706A442.156821 442.156821 0 0 0 442.523451 0 442.523451 442.523451 0 0 0 0 442.523451a442.523451 442.523451 0 0 0 442.523451 442.156821 439.957035 439.957035 0 0 0 284.138919-103.389903l230.977444 231.344074a38.862871 38.862871 0 0 0 54.994629-54.627998zM183.315431 700.631579a366.630863 366.630863 0 1 1 256.641604 106.689581 364.064447 364.064447 0 0 1-256.641604-106.689581z"></path></svg>
+        <input type="search" class="search-box" id="searchBox" placeholder="检索卡片" autocomplete="off" />
+    </div>
+
+    <div class="empty-state" id="emptyState">
+        <span class="empty-icon"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="8" y="10" width="48" height="40" rx="3" fill="#F6F1E4" stroke="#C2452D" stroke-width="2"/><rect x="8" y="10" width="48" height="7" fill="#EBD68C"/><rect x="14" y="24" width="36" height="1.6" fill="#C2452D" opacity=".7"/><rect x="14" y="30" width="36" height="1.6" fill="#C2452D" opacity=".7"/><rect x="14" y="36" width="24" height="1.6" fill="#2B3A55" opacity=".5"/><circle cx="44" cy="43" r="6.5" fill="none" stroke="#C2452D" stroke-width="2" opacity=".75"/></svg></span>
+        <p>目录柜空空如也，登记一张吧</p>
+    </div>
+    <div class="empty-state" id="searchEmpty">
+        <span class="empty-icon"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="8" y="10" width="48" height="40" rx="3" fill="#F6F1E4" stroke="#8A7A5E" stroke-width="2"/><rect x="14" y="24" width="36" height="1.6" fill="#8A7A5E" opacity=".5"/><rect x="14" y="32" width="36" height="1.6" fill="#8A7A5E" opacity=".5"/><rect x="14" y="40" width="20" height="1.6" fill="#8A7A5E" opacity=".5"/><path d="M40 40l12 12" stroke="#C2452D" stroke-width="3.4" stroke-linecap="round"/><circle cx="35" cy="35" r="9" fill="none" stroke="#C2452D" stroke-width="3"/></svg></span>
+        <p>没有找到相关卡片</p>
+    </div>
+
+    <!-- 登记台 -->
     <div class="toolbar">
-        <button class="btn" id="btnAdd" title="写便签"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M1257.909403303755 683.0329076593737H683.0329076593737v569.5376757843347c0 62.92180549341494-50.90946080830846 113.83126630172337-113.83126630172337 113.83126630172337h-113.83126630172337c-62.92180549341494 0-114.02193843958224-50.90946080830846-114.02193843958224-113.83126630172337V683.0329076593737H-233.52805902803755c-60.06172342553244 0-108.68311857953489-48.62139515400246-108.68311857953489-108.68311857953489v-124.50890602181805c0-60.06172342553244 48.62139515400246-108.68311857953489 108.68311857953489-108.68311857953489h574.876495644382V-228.37991130584908c0-62.92180549341494 51.10013294616729-113.83126630172337 114.02193843958224-113.83126630172337H569.2016413576499c62.92180549341494 0 113.83126630172337 51.10013294616729 113.83126630172337 113.83126630172337v569.5376757843347h574.876495644382c60.06172342553244 0 108.68311857953489 48.62139515400246 108.68311857953489 108.68311857953489v124.50890602181805c0 59.87105128767361-48.62139515400246 108.68311857953489-108.68311857953489 108.68311857953489z"></path></svg></button>
-        <button class="btn" id="btnClear" title="清空所有"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M96 128h832v64H96z"></path><path d="M672 160h-64V96a32 32 0 0 0-32-32h-128a32 32 0 0 0-32 32v64H352V96a96 96 0 0 1 96-96h128a96 96 0 0 1 96 96zM160 256h64v640H160zM800 256h64v640h-64zM288 1024a128 128 0 0 1-128-128h64a64 64 0 0 0 64 64zM736 1024v-64a64 64 0 0 0 64-64h64a128 128 0 0 1-128 128zM288 960h448v64H288zM320 256h64v608H320zM480 256h64v608h-64zM640 256h64v608h-64z"></path></svg></button>
-        <button class="btn" id="btnRandom" title="随机补充 5 张便签"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M971.221333 184.618667a46.933333 46.933333 0 0 0-20.053333-14.122667 16332.074667 16332.074667 0 0 0-240.042667-96.170667C648.618667 49.578667 586.709333 24.789333 524.245333 0h-25.642666l-16.981334 7.04C359.168 55.466667 237.184 104.405333 115.285333 152.789333c-15.616 6.485333-30.72 12.373333-46.933333 18.901334-12.544 5.290667-21.290667 13.525333-21.290667 27.050666s7.509333 22.442667 20.650667 27.733334c1.792 1.194667 4.992 1.792 6.869333 2.986666 138.794667 58.368 278.186667 116.778667 416.981334 175.786667 13.738667 6.485333 26.24 6.485333 40.661333 0 119.381333-50.133333 237.525333-100.266667 356.309333-150.442667 23.125333-8.832 45.013333-18.858667 67.541334-28.330666 19.370667-8.234667 26.24-27.093333 14.976-41.856m-629.546667 38.912c-31.872 23.594667-92.501333 24.192-126.293333 0.597333-22.485333-15.36-22.485333-39.509333-0.597334-55.466667 15.018667-11.221333 37.546667-17.706667 54.4-17.706666 31.274667 0 53.12 4.138667 72.533334 17.706666 21.248 15.957333 21.248 39.552 0 54.869334m233.173333 0c-31.274667 24.192-95.018667 24.192-126.933333 0-21.248-15.914667-20.608-39.509333 1.28-54.869334 19.370667-13.568 40.618667-17.706667 69.376-17.706666 15.616 0 37.546667 4.138667 55.637333 16.554666 21.888 16.512 22.528 40.106667 0.64 55.978667m234.410667 1.194667c-31.872 23.594667-92.501333 24.192-126.293334 0.554666-22.485333-15.914667-22.485333-39.509333 0-55.466666 18.773333-14.122667 40.021333-18.261333 62.549334-18.261334 22.485333 0 43.733333 4.138667 62.506666 17.706667 23.125333 15.914667 23.125333 38.954667 1.28 55.466667m-342.485333 213.034666c-30.72-12.373333-61.226667-25.386667-92.501333-38.912-108.16-46.037333-215.68-90.88-323.84-136.277333-9.984-4.693333-20.650667-7.082667-31.274667-1.834667-14.421333 7.082667-18.730667 19.498667-18.730667 33.621334v496.213333c0 29.44 13.141333 50.133333 41.898667 61.909333 133.12 55.466667 265.045333 110.933333 397.568 166.954667 28.757333 11.776 49.408-0.597333 49.408-30.08v-257.237333c0-86.101333 0-171.52 1.237333-257.792 1.792-17.706667-5.632-29.482667-23.765333-36.565334m-196.352 242.474667c-14.976 21.248-40.618667 23.04-58.112 2.944-19.968-21.845333-25.6-48.341333-22.442667-75.434667a124.16 124.16 0 0 1 14.421334-42.453333c13.141333-22.4 39.381333-23.04 57.514666-4.138667 15.616 15.914667 23.765333 39.509333 23.765334 59.605334 0 25.941333-3.754667 43.050667-15.018667 59.562666m704.512-417.749333l-416.384 175.146667c-17.493333 7.68-25.002667 18.901333-25.002667 36.565333v257.28c0 86.656 0 172.245333 0.64 258.986667 0 27.733333 20.608 40.661333 47.530667 29.482666l402.56-169.301333c26.88-11.221333 40.021333-31.274667 40.021333-58.410667V293.845333c-0.597333-28.885333-21.888-42.496-49.365333-31.274666m-259.413333 578.133333c-17.536 20.053333-42.538667 18.858667-58.837334-2.986667-22.485333-31.872-19.370667-89.173333 7.552-118.016 18.730667-20.650667 43.093333-18.901333 58.752 4.096 9.386667 13.610667 14.421333 33.066667 14.421334 55.466667 0 20.053333-5.632 42.496-21.845334 61.44m181.845334-293.248c-17.493333 20.053333-42.538667 18.858667-58.794667-2.986667-21.888-31.232-19.370667-87.296 5.632-115.541333 20.650667-23.594667 45.653333-21.845333 62.549333 4.693333 8.106667 11.818667 13.098667 28.928 13.098667 48.384-1.28 23.637333-5.632 47.189333-22.485333 65.493334"></path></svg></button>
-        <button class="btn" id="btnExport" title="导出备份"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M892.7 559.5c-26.1 0-41.8 15.7-41.8 41.8v52.2c0 88.8-5.2 156.6-167.1 156.6H349.6c-167.1 0-167.1-73.1-167.1-167.1V434.1C172.1 303.6 234.8 277.5 307.9 267h5.2c26.1 0 41.8-15.7 41.8-41.8s-15.7-41.8-41.8-41.8h-47C177.3 183.5 99 256.6 99 350.6v370.7c0 88.8 73.1 167.1 167.1 167.1h496.1c88.8 0 167.1-73.1 167.1-167.1V596c5.2-15.7-15.7-36.5-36.6-36.5z m-642.3 20.8c0 41.8 10.4 83.5 20.9 120.1 47-135.8 172.3-235 323.7-235v52.2c0 20.9 10.4 41.8 31.3 52.2 10.4 5.2 15.7 10.4 26.1 10.4 10.4 0 26.1-5.2 31.3-10.4l229.8-177.5c10.4-10.4 20.9-31.3 20.9-52.2 0-15.7-10.4-36.6-20.9-47L683.8 115.6c-10.4-10.4-26.1-10.4-36.6-10.4s-15.7 0-26.1 10.4c-20.9 10.4-31.3 31.3-31.3 52.2v57.4c-187.9 0.1-339.4 156.7-339.4 355.1z"></path></svg></button>
-        <button class="btn" id="btnImport" title="导入备份"><svg fill="currentColor" viewBox="0 0 1201 1024" xmlns="http://www.w3.org/2000/svg"><path d="M1130.726 590.552c0 47.88-8.23 94.264-23.192 136.908-54.613-159.352-199.75-273.067-371.82-273.067v68.08c0 26.184-14.214 49.376-36.657 61.346-8.978 4.489-19.452 7.481-29.177 7.481-14.215 0-27.681-4.488-39.651-13.466L366.888 372.847c-16.46-12.718-26.185-32.918-26.185-54.613s9.726-41.895 26.185-54.614l263.34-205.735c11.223-8.977 25.437-13.466 39.652-13.466 9.725 0 20.199 2.244 29.177 7.481 22.443 11.222 36.658 35.162 36.658 61.347v68.08c217.705-0.749 395.011 183.29 395.011 409.225z"></path><path d="M982.198 580.875c-26.184 0-47.88 21.695-47.88 47.88v57.606c0 100.997-3.74 181.795-191.52 181.795H359.755c-193.765 0-191.52-86.035-191.52-191.521V437.234c-13.467-150.374 57.605-183.291 143.64-190.025h2.992c26.185 0 47.88-21.695 47.88-47.88 0-26.184-21.695-48.628-47.88-48.628h-2.992v-0.748h-47.88c-105.486 0-191.521 86.035-191.521 191.52v430.922c0 105.486 86.035 191.521 191.52 191.521H837.81c105.486 0 191.52-86.035 191.52-191.52V628.754c0.749-26.185-20.947-47.88-47.132-47.88z"></path></svg></button>
+        <button class="btn btn-primary" id="btnAdd" title="登记一张心事"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><circle cx="512" cy="512" r="400" fill="currentColor" opacity="0.15"/><path d="M512 312v400M312 512h400" stroke="currentColor" stroke-width="88" stroke-linecap="round" fill="none"/></svg></button>
+        <button class="btn" id="btnClear" title="清空目录柜"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M96 128h832v64H96z"></path><path d="M672 160h-64V96a32 32 0 0 0-32-32h-128a32 32 0 0 0-32 32v64H352V96a96 96 0 0 1 96-96h128a96 96 0 0 1 96 96zM160 256h64v640H160zM800 256h64v640h-64zM320 256h64v608H320zM480 256h64v608h-64zM640 256h64v608h-64z"></path></svg></button>
+        <button class="btn" id="btnRandom" title="随机补充 5 张卡片"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><rect x="128" y="128" width="768" height="768" rx="140" fill="currentColor" opacity="0.15"/><circle cx="352" cy="352" r="58" fill="currentColor"/><circle cx="672" cy="352" r="58" fill="currentColor"/><circle cx="512" cy="512" r="58" fill="currentColor"/><circle cx="352" cy="672" r="58" fill="currentColor"/><circle cx="672" cy="672" r="58" fill="currentColor"/></svg></button>
+        <button class="btn" id="btnExport" title="导出目录备份"><svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M892.7 559.5c-26.1 0-41.8 15.7-41.8 41.8v52.2c0 88.8-5.2 156.6-167.1 156.6H349.6c-167.1 0-167.1-73.1-167.1-167.1V434.1C172.1 303.6 234.8 277.5 307.9 267h5.2c26.1 0 41.8-15.7 41.8-41.8s-15.7-41.8-41.8-41.8h-47C177.3 183.5 99 256.6 99 350.6v370.7c0 88.8 73.1 167.1 167.1 167.1h496.1c88.8 0 167.1-73.1 167.1-167.1V596c5.2-15.7-15.7-36.5-36.6-36.5z m-642.3 20.8c0 41.8 10.4 83.5 20.9 120.1 47-135.8 172.3-235 323.7-235v52.2c0 20.9 10.4 41.8 31.3 52.2 10.4 5.2 15.7 10.4 26.1 10.4 10.4 0 26.1-5.2 31.3-10.4l229.8-177.5c10.4-10.4 20.9-31.3 20.9-52.2 0-15.7-10.4-36.6-20.9-47L683.8 115.6c-10.4-10.4-26.1-10.4-36.6-10.4s-15.7 0-26.1 10.4c-20.9 10.4-31.3 31.3-31.3 52.2v57.4c-187.9 0.1-339.4 156.7-339.4 355.1z"></path></svg></button>
+        <button class="btn" id="btnImport" title="导入目录备份"><svg fill="currentColor" viewBox="0 0 1201 1024" xmlns="http://www.w3.org/2000/svg"><path d="M1130.726 590.552c0 47.88-8.23 94.264-23.192 136.908-54.613-159.352-199.75-273.067-371.82-273.067v68.08c0 26.184-14.214 49.376-36.657 61.346-8.978 4.489-19.452 7.481-29.177 7.481-14.215 0-27.681-4.488-39.651-13.466L366.888 372.847c-16.46-12.718-26.185-32.918-26.185-54.613s9.726-41.895 26.185-54.614l263.34-205.735c11.223-8.977 25.437-13.466 39.652-13.466 9.725 0 20.199 2.244 29.177 7.481 22.443 11.222 36.658 35.162 36.658 61.347v68.08c217.705-0.749 395.011 183.29 395.011 409.225z"></path><path d="M982.198 580.875c-26.184 0-47.88 21.695-47.88 47.88v57.606c0 100.997-3.74 181.795-191.52 181.795H359.755c-193.765 0-191.52-86.035-191.52-191.521V437.234c-13.467-150.374 57.605-183.291 143.64-190.025h2.992c26.185 0 47.88-21.695 47.88-47.88 0-26.184-21.695-48.628-47.88-48.628h-2.992v-0.748h-47.88c-105.486 0-191.521 86.035-191.521 191.52v430.922c0 105.486 86.035 191.521 191.52 191.521H837.81c105.486 0 191.52-86.035 191.52-191.52V628.754c0.749-26.185-20.947-47.88-47.132-47.88z"></path></svg></button>
     </div>
     <input type="file" id="fileInput" accept=".json,application/json" hidden />
 
-    <!-- 清空撤回提示 -->
+    <!-- 撤回提示 -->
     <div class="undo-bar" id="undoBar">
-        <span class="undo-text" id="undoText">已清空所有便签</span>
+        <span class="undo-text" id="undoText">已清空所有卡片</span>
         <button class="undo-btn" id="btnUndo">撤销</button>
         <button class="undo-close" id="btnUndoClose" title="关闭">×</button>
     </div>
 
-    <!-- 输入弹窗 -->
+    <!-- 登记弹窗 -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
-            <h3>写下你的想法...</h3>
-            <textarea id="noteInput" placeholder="今天想说点什么？（30字以内）" maxlength="30"></textarea>
+            <span class="modal-kicker">HEART LENDING DESK</span>
+            <h3>登记一张心事</h3>
+            <textarea id="noteInput" placeholder="今天想登记点什么？（30 字以内）" maxlength="30"></textarea>
             <div class="modal-actions">
                 <button class="modal-btn cancel" id="btnCancel">取消</button>
-                <button class="modal-btn confirm" id="btnConfirm">贴上去</button>
+                <button class="modal-btn confirm" id="btnConfirm">盖章入册</button>
             </div>
         </div>
     </div>
@@ -642,7 +745,7 @@
     </div>
 
     <script>
-        // --- 配置与状态 ---
+        // --- 配置与状态（数据结构与 STORAGE_KEY 与旧版完全兼容） ---
         const STORAGE_KEY = 'sticker_wall_notes_v2';
         const board = document.getElementById('board');
         const modalOverlay = document.getElementById('modalOverlay');
@@ -658,9 +761,14 @@
         const confirmCancel = document.getElementById('btnConfirmCancel');
         const fileInput = document.getElementById('fileInput');
 
+        // 书脊索引色（做旧）；旧便签色由 normalizeColor 渐进迁移
         const config = {
-            colors: ['#fff2a8', '#ffd6e0', '#c6f6d5', '#bfdbfe', '#e2d1f9', '#ffe0c2'],
-            shapes: ['', '', '', 'shape-fold', 'shape-bubble', 'shape-wave'],
+            colors: ['#EBD68C', '#E8BDC6', '#B5D4BC', '#B0C6E2', '#C9BADE', '#E5C29E'],
+            legacyColors: {
+                '#fff2a8': '#EBD68C', '#ffd6e0': '#E8BDC6', '#c6f6d5': '#B5D4BC',
+                '#bfdbfe': '#B0C6E2', '#e2d1f9': '#C9BADE', '#ffe0c2': '#E5C29E'
+            },
+            shapes: ['', '', '', 'shape-clip', 'shape-punch', ''],
             sizes: [
                 { w: 180, h: 120, label: 'small' },
                 { w: 220, h: 140, label: 'medium' },
@@ -702,6 +810,25 @@
 
         function createId() {
             return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+        }
+
+        function normalizeColor(c) {
+            if (!c) return '';
+            const k = String(c).toLowerCase();
+            return config.legacyColors[k] || c;
+        }
+
+        // 由 id 哈希生成稳定卡号（0001-9999），同一张卡永远同号
+        function cardNo(id) {
+            const s = String(id || '');
+            let h = 0;
+            for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+            return String((h % 9999) + 1).padStart(4, '0');
+        }
+
+        function dateStamp(ts) {
+            const d = ts ? new Date(ts) : new Date();
+            return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
         }
 
         function getInitialCount() {
@@ -860,9 +987,8 @@
             card.dataset.size = size || '';
             if (shape) card.classList.add(shape);
             card.style.setProperty('--angle', `${angle ?? 0}deg`);
-            const bgColor = color || randomItem(config.colors);
-            card.style.setProperty('--card-bg', bgColor);
-            card.style.backgroundColor = bgColor;
+            const spineColor = normalizeColor(color) || randomItem(config.colors);
+            card.style.setProperty('--spine', spineColor);
             const sizeLabel = size || getSizeForText(text);
             const { w: cardW, h: cardH } = getCardSize(shape, sizeLabel);
             card.style.setProperty('--card-w', `${cardW}px`);
@@ -872,13 +998,14 @@
             card.style.zIndex = ++state.zIndex;
             if (animateDelay) card.style.animationDelay = `${animateDelay}ms`;
 
-            const time = createdAt ? new Date(createdAt) : new Date();
-            const timeStr = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
             card.innerHTML = `
-                <div class="card-header">
-                    <span class="card-time">${timeStr}</span>
-                    <span class="card-close" title="删除">×</span>
+                <svg class="card-clip" viewBox="0 0 22 26" aria-hidden="true"><path d="M17 5v14a4 4 0 0 1-8 0V7a2.5 2.5 0 0 1 5 0v11a1 1 0 0 1-2 0V8" fill="none" stroke="#8A93A6" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <div class="card-head">
+                    <span class="card-no">NO.${cardNo(id)}</span>
+                    <span class="card-date">${dateStamp(createdAt)}</span>
+                    <span class="card-close" title="删除" role="button" aria-label="删除这张卡片">×</span>
                 </div>
+                <div class="card-rule"></div>
                 <div class="card-body"></div>
             `;
             card.querySelector('.card-body').textContent = text ?? '';
@@ -888,7 +1015,7 @@
             state.cardMap.set(card, {
                 id,
                 angle: angle ?? 0,
-                color: color || '',
+                color: spineColor,
                 shape: shape || '',
                 size: sizeLabel,
                 createdAt: createdAt || Date.now(),
@@ -935,7 +1062,7 @@
                 card.remove();
                 updateEmptyState();
                 saveAllNotes();
-                pushUndoBatch([note], '已删除 1 张便签');
+                pushUndoBatch([note], '已删除 1 张卡片');
             }, 300);
         }
 
@@ -1012,7 +1139,7 @@
             document.addEventListener('pointercancel', onUp);
         }
 
-        // --- 工具栏控制 ---
+        // --- 登记台控制 ---
         function setupControls() {
             document.getElementById('btnAdd').addEventListener('click', () => {
                 modalOverlay.classList.add('open');
@@ -1023,11 +1150,11 @@
             document.getElementById('btnClear').addEventListener('click', async () => {
                 const cards = [...board.querySelectorAll('.card:not(.removing)')];
                 if (cards.length === 0) return;
-                const ok = await showConfirm('确定要撕掉所有便签吗？');
+                const ok = await showConfirm('确定要清空整个目录柜吗？');
                 if (!ok) return;
 
                 clearing = true;
-                pushUndoBatch(collectNotes(), `已清空 ${cards.length} 张便签`);
+                pushUndoBatch(collectNotes(), `已清空 ${cards.length} 张卡片`);
                 cards.forEach((card, i) => {
                     setTimeout(() => {
                         card.classList.remove('pop-in');
@@ -1124,7 +1251,7 @@ try {
                 const text = noteInput.value.trim();
                 if (text) {
                     if (text.length > 30) {
-                        alert('便签不能超过 30 字');
+                        alert('卡片不能超过 30 字');
                         return;
                     }
                     const note = createPresetNote();
@@ -1186,7 +1313,7 @@ try {
                 text: card.querySelector('.card-body').textContent,
                 x: parseFloat(card.style.left),
                 y: parseFloat(card.style.top),
-                color: cardState?.color || card.dataset.color || card.style.backgroundColor,
+                color: cardState?.color || card.dataset.color || '',
                 shape: cardState?.shape || card.dataset.shape || '',
                 size: cardState?.size || card.dataset.size || getSizeForText(card.querySelector('.card-body').textContent),
                 angle: cardState?.angle ?? 0,
